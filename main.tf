@@ -20,14 +20,31 @@ provider "databricks" {
   token = var.databricks_token
 }
 
+resource "databricks_storage_credential" "this" {
+  name = "sameer-s3-credential"
+
+  aws_iam_role {
+    role_arn = var.aws_iam_role_arn
+  }
+
+  comment = "S3 storage credential for Databricks catalog"
+}
+
+resource "databricks_external_location" "this" {
+  name            = "sameer-s3-location"
+  url             = "s3://targetdemo/databricks-catalog"
+  credential_name = databricks_storage_credential.this.name
+  comment         = "External location for targetdemo S3 bucket"
+
+  depends_on = [databricks_storage_credential.this]
+}
+
 resource "databricks_catalog" "this" {
   name         = "sameer_catalog"
   comment      = "Main catalog managed by Terraform"
   storage_root = "s3://targetdemo/databricks-catalog"
 
-  properties = {
-    purpose = "development"
-  }
+  depends_on = [databricks_external_location.this]
 }
 
 resource "databricks_schema" "dev" {
@@ -37,3 +54,6 @@ resource "databricks_schema" "dev" {
 
   depends_on = [databricks_catalog.this]
 }
+
+
+
