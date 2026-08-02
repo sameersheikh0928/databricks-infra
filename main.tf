@@ -20,21 +20,14 @@ provider "databricks" {
   token = var.databricks_token
 }
 
-# --- Create Catalog ---
 resource "databricks_catalog" "this" {
-  name    = "sameer_catalog"
-  comment = "Main catalog for Sameer workspace managed by Terraform"
+  name         = "sameer_catalog"
+  comment      = "Main catalog managed by Terraform"
+  storage_root = "s3://targetdemo/databricks-catalog"
 
   properties = {
     purpose = "development"
   }
 }
 
-# --- Create Schema inside the Catalog ---
 resource "databricks_schema" "dev" {
-  catalog_name = databricks_catalog.this.name
-  name         = "sameer_workspace_dev"
-  comment      = "Dev schema managed by Terraform"
-
-  depends_on = [databricks_catalog.this]
-}
