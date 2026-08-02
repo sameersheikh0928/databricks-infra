@@ -31,3 +31,9 @@ resource "databricks_catalog" "this" {
 }
 
 resource "databricks_schema" "dev" {
+  catalog_name = databricks_catalog.this.name
+  name         = "sameer_workspace_dev"
+  comment      = "Dev schema managed by Terraform"
+
+  depends_on = [databricks_catalog.this]
+}
