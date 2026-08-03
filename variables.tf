@@ -38,3 +38,9 @@ variable "aws_iam_role_name" {
   description = "IAM role name"
   default     = "databricks-s3-role"
 }
+
+variable "aws_account_id" {
+  type        = string
+  description = "Your AWS account ID"
+  default     = "192881361004"
+}
