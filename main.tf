@@ -1,3 +1,8 @@
+import {
+  to = aws_iam_role.databricks_role
+  id = "databricks-s3-role"
+}
+
 terraform {
   cloud {
     organization = "SAMEER_snowflake"
