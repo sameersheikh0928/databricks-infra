@@ -35,6 +35,6 @@ variable "aws_iam_role_arn" {
 
 variable "aws_iam_role_name" {
   type        = string
-  description = "IAM role name for Databricks S3 access"
+  description = "IAM role name"
   default     = "databricks-s3-role"
 }

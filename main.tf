@@ -1,8 +1,3 @@
-import {
-  to = aws_iam_role.databricks_role
-  id = "databricks-s3-role"
-}
-
 terraform {
   cloud {
     organization = "SAMEER_snowflake"
@@ -35,14 +30,14 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-# --- Step 1: Create S3 folder for catalog ---
+# --- S3 folder for catalog ---
 resource "aws_s3_object" "catalog_folder" {
   bucket  = var.s3_bucket_name
   key     = "databricks-catalog/"
   content = ""
 }
 
-# --- Step 2: Create storage credential ---
+# --- Storage credential ---
 resource "databricks_storage_credential" "this" {
   name = "sameer-s3-credential"
 
@@ -54,83 +49,13 @@ resource "databricks_storage_credential" "this" {
   depends_on = [aws_s3_object.catalog_folder]
 }
 
-# --- Step 3: Update IAM trust policy with Databricks-generated external ID ---
-resource "aws_iam_role_policy" "databricks_s3" {
-  name = "databricks-s3-policy"
-  role = var.aws_iam_role_name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation",
-          "s3:GetLifecycleConfiguration",
-          "s3:PutLifecycleConfiguration"
-        ]
-        Resource = [
-          "arn:aws:s3:::${var.s3_bucket_name}",
-          "arn:aws:s3:::${var.s3_bucket_name}/*"
-        ]
-      }
-    ]
-  })
+# --- Outputs to get External ID and IAM ARN ---
+output "databricks_external_id" {
+  value       = databricks_storage_credential.this.aws_iam_role[0].external_id
+  description = "Paste this External ID into your IAM trust policy"
 }
 
-resource "aws_iam_role" "databricks_role" {
-  name = var.aws_iam_role_name
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::414351767826:root"
-        }
-        Action = "sts:AssumeRole"
-        Condition = {
-          StringEquals = {
-            "sts:ExternalId" = databricks_storage_credential.this.aws_iam_role[0].external_id
-          }
-        }
-      }
-    ]
-  })
-}
-
-# --- Step 4: Create external location ---
-resource "databricks_external_location" "this" {
-  name            = "sameer-s3-location"
-  url             = "s3://${var.s3_bucket_name}/databricks-catalog"
-  credential_name = databricks_storage_credential.this.name
-  comment         = "External location for targetdemo S3 bucket"
-
-  depends_on = [
-    databricks_storage_credential.this,
-    aws_iam_role.databricks_role
-  ]
-}
-
-# --- Step 5: Create catalog ---
-resource "databricks_catalog" "this" {
-  name         = "sameer_catalog"
-  comment      = "Main catalog managed by Terraform"
-  storage_root = "s3://${var.s3_bucket_name}/databricks-catalog"
-
-  depends_on = [databricks_external_location.this]
-}
-
-# --- Step 6: Create schema ---
-resource "databricks_schema" "dev" {
-  catalog_name = databricks_catalog.this.name
-  name         = "sameer_workspace_dev"
-  comment      = "Dev schema managed by Terraform"
-
-  depends_on = [databricks_catalog.this]
+output "databricks_iam_user_arn" {
+  value       = databricks_storage_credential.this.aws_iam_role[0].unity_catalog_iam_arn
+  description = "Paste this ARN as Principal into your IAM trust policy"
 }
