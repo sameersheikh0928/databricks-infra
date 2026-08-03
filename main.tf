@@ -158,9 +158,8 @@ resource "time_sleep" "wait_for_location" {
 
 # --- Catalog ---
 resource "databricks_catalog" "this" {
-  name         = "sameer_catalog_dev"
-  comment      = "Main catalog managed by Terraform"
-  storage_root = "s3://${var.s3_bucket_name}/databricks-catalog"
+  name    = "sameer_catalog_dev"
+  comment = "Main catalog managed by Terraform"
 
   properties = {
     purpose    = "development"
